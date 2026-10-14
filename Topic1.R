@@ -156,11 +156,12 @@ sig <- 1
 if(sig==1) { 
   u <- log(c) 
 } else { 
-  u <- (c^(1-sig)-1)/(1-sig) 
+  u <- (c^(1-sig)-1)/(1-sig) ##CRRA: constant relative risk aversion
 } 
 u
 
-# functions
+# functions -- very similar to python functions
+## note {} usage 
 ######################
 
 util <- function(c,sig=1) {
@@ -177,13 +178,15 @@ util(exp(1),2)
 
 # loops
 ############
-
+## Simple for loop, using i from 1-5 instead of defining it as a separate variable
 x <- NULL
 for(i in 1:5){
   x <- c(x,i)
 }
 x
 
+## Simple while loop; looking for a value until a condition is met
+## useful for optimisation problems
 x   <- 2
 eps <- 1e-8
 while(abs(x^2-x-1) > eps) {
@@ -199,16 +202,17 @@ rm(list = ls())
 require(zoo)
 
 # Set working directory
-# setwd(".")
+setwd("C:/Users/nansh/OneDrive - University of Otago/BCOM/EXCHANGE/Financial_Risk_In_R")
 
 
-# Quantmod package
+# Quantmod package to download financial data; yahoo finance, fed, google finance,
+## oanda (currency and metals), own SQL databases
 require(quantmod)
 getSymbols("SPY", src="yahoo")
 head(SPY)
 class(SPY)
 
-# zoo objects
+# zoo objects and slicing data
 data <- as.zoo(SPY$SPY.Close)
 head(data)
 head(index(data))
@@ -251,12 +255,11 @@ mydates1
 
 # Business days
 require(bizdays)
-load_quantlib_calendars("Poland", as.Date(head(mydates1,1)), as.Date(tail(mydates1, 1)))
+  load_quantlib_calendars("Poland", as.Date(head(mydates1,1)), as.Date(tail(mydates1, 1)))
 is.bizday(mydates1, "QuantLib/Poland")
 
 ## lubridate package
 require(lubridate)
-
 mydate <- ymd("2017-02-01")
 mydate
 
@@ -274,7 +277,7 @@ mydate + (0:5)*months(2)
 ## merging zoo objects
 data1 <- data
 getSymbols("GC=F", src="yahoo")
-data2 <- as.zoo(`GC=F`$`GC=F.Close`)
+data2 <- as.zoo(`GC=F`$`GC=F.Close`) ## Gold futures
 
 
 ## Sum
@@ -289,28 +292,28 @@ data3 <- merge(data1, data2)
 head(data3)
 tail(data3)
 
-## Inner join
+## Inner join - all=False merges only non-null days
 data4 <- merge(data1, data2, all=FALSE)
 head(data4)
 tail(data4)
 
-## Windows
+## Windows - filtering dates by a window (using zoo package)
 data5 <- window(data, start=as.Date("2020-01-01"), end=as.Date("2020-12-31"))
-
 length(data5)
 head(data5)
 
 ## lags
-data6 <- lag(data, -1)
+data6 <- lag(data, -1) ## Creates lagged values
 head(merge(data, data6))
 tail(merge(data, data6))
 
-## which package is on the top?
+## which package is on the top? useful if different packages have the same functions
 data6 <- stats::lag(data, -1)
 head(merge(data, data6))
 
 library(dplyr)
-data6 <- dplyr::lag(data, 1)
+data6 <- dplyr::lag(data, 1) ##uses the dplyr lag and not the stats lag
+## note when using dplyr, that lags work by 1 and not by -1
 head(merge(data, data6))
 
 ## leads
@@ -346,7 +349,7 @@ proc.time() - tmp
 head(rollsd1)
 
 tmp <- proc.time()
-rollsd2 <- rollapply(data, width=10, sd, by=1)
+rollsd2 <- rollapply(data, width=10, sd, by=1) ##One line rolling sd
 proc.time() - tmp
 
 head(rollsd2)
@@ -361,7 +364,7 @@ weeklydata <- apply.weekly(data, last)
 head(weeklydata)
 
 ## A file with WIG data
-filename <- "https://stooq.pl/q/d/l/?s=wig&i=d"
+filename <- "./ship_us_d.csv"
 x        <- read.csv(filename)
 y <- x[,c(1,5)]
 colnames(y) <- c("Dates","Price")
