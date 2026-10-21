@@ -1,31 +1,42 @@
 require(zoo)
 
-# Choose Your fund from the list
+# Choose Your fund from webpage
 # browseURL("https://stooq.pl/t/?i=591")
 
-#fundname    <- "1018.n"   # <-- example 
-fundname    <- "wig"       # <-- this line needs to be adjusted
+# Enter the name of your fund or asset
+#fundname    <- "3360.n"            # This is example, this line needs to be adjusted
 
-filename    <- paste0(fundname,".csv")
+# download data to working directory (comment below lines after downloading data)
+#filename    <- paste0("https://stooq.pl/q/d/?s=",fundname)
+#browseURL(filename)                 
 
-# Creating CSV file (set TRUE only at the first time and then return to FALSE)
-CreFile = FALSE
-if(CreFile){
-  filepath    <- paste0("https://stooq.pl/q/d/l/?s=",fundname,"&i=d")
-  x           <- read.csv2(file=filepath, head=TRUE, sep=",", dec=".")
-  y           <- x[,c(1,5)]
-  colnames(y) <- c("Dates","Price")
-  ind         <- as.Date(y$Dates)
-  N           <- max(as.numeric(diff(tail(ind,2000))))
-  # checks if at least 2000 observations and there is no observation gap longer that 7 days
-  if(dim(y)[1]>2000 & N<8){
-    write.csv(y,filename, row.names = FALSE)
-  }
-  # check if you have .csv file in your working directory 
+# 1. Go to the bottom of the webpage 
+# 2. Download csv file (right-click on "Pobierz dane w pliku csv..." and save it).
+# 3. Copy the file to the working directory
+# 4. Provide the name of the file in line below (e.g. 1017_n_d.csv)
+
+csvname    <- "C:/Users/nansh/OneDrive - University of Otago/BCOM/EXCHANGE/Financial_Risk_In_R/Wholesale_price_trends_20261022033938.csv"       # ADJUST THE LINE WITH THE NAME OF YOUR FILE
+
+# Now we can download data and transform it to zoo series, which we use in analyses
+x           <- read.csv2(file=csvname, head=TRUE, sep=",", dec=".")
+y           <- x[,c(1,5)]
+colnames(y) <- c("Dates","Price")
+P           <- zoo(y$Price, order.by = as.Date(y$Dates, format = "%d/%m/%Y"))
+r           <- diff(log(P))
+
+######################################################################################################
+#  A check if there is at least 1250 observations and there is no observation gap longer that 6 days #
+######################################################################################################
+Ngap         <- max(as.numeric(diff(tail(index(P),1250))))
+
+if(Ngap>6){ 
+  print(paste0("Observation gap is longer than 6 days and amounts to ", Ngap))
+  print(paste0("Consider changing the fund"))
 }
 
-# Downloading the data
-y     <- read.csv2(file=filename , head=TRUE, sep=",", dec=".")
-P     <- zoo(y$Price, order.by = as.Date(y$Dates))
-r     <- diff(log(P))
+if(length(P)<1250){
+  print(paste0("The number of obswervations is below 1250 and amounts to ", length(P)))
+  print(paste0("Consider changing the fund"))
+}
+rm(list=c("Ngap","x","y"))
 
