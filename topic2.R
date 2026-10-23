@@ -17,7 +17,7 @@ plot(r, main="returns", xlab="", ylab="")
 
 T  <- length(r)                        # full sample, nobs
 N  <- 1250                             # we shorten the sample to the last 5 years
-r  <- tail(r,N)                        # log-returns
+r  <- tail(r,N)                        # log-returnssig
 R  <- coredata(r)
 
 ##########################
@@ -26,9 +26,9 @@ R  <- coredata(r)
 
 mu = sum(R)/N
 
-R0    <- R - mu
-M2    <- sum(R0^2)/N
-M3    <- sum(R0^3)/N
+R0    <- R - mu #Shifted means to centre around 0. 
+M2    <- sum(R0^2)/N 
+M3    <- sum(R0^3)/N 
 M4    <- sum(R0^4)/N
 
 sig <- sqrt(M2)       ## volatility
@@ -36,7 +36,8 @@ S   <- M3/(sig^3)     ## skewness
 K   <- M4/(sig^4)     ## kurtosis
 
 # the same with package moments
-require(moments)
+require
+# na.rm will remove null or na values
 M1   = moment(R, order = 1, central = FALSE, na.rm = TRUE)
 M2   = moment(R, order = 2, central = TRUE, na.rm = TRUE)
 M3   = moment(R, order = 3, central = TRUE, na.rm = TRUE)
