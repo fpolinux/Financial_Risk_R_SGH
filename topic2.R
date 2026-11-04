@@ -36,7 +36,7 @@ S   <- M3/(sig^3)     ## skewness
 K   <- M4/(sig^4)     ## kurtosis
 
 # the same with package moments
-require
+require(moments)
 # na.rm will remove null or na values
 M1   = moment(R, order = 1, central = FALSE, na.rm = TRUE)
 M2   = moment(R, order = 2, central = TRUE, na.rm = TRUE)
@@ -48,32 +48,36 @@ S0   = M3/(sig0^3)
 K0   = M4/(sig0^4)
 
 # Annualization
-Nyear <- 250
+Nyear <- 365 #do not use 251 trading days since spot markets do not close
 muA   <- mu*Nyear
 sigA  <- sig*sqrt(Nyear)
 
 
 ###################
-# Normality test  #
+# Normality test  # 
+# Each of these tests for skew and kurtosis 
 ###################
 
 #D'Agostino test for skewness
-agostino.test(R)
+agostino.test(R) #H0: S=0; p-value is very small and so reject H0. Skew of 0.36
 
 #Anscombe-Glynn test of kurtosis for normal samples
-anscombe.test(R)
+anscombe.test(R) #H0: K=3
 
 #Jarque-Bera test of normality
-jarque.test(R)
+jarque.test(R) #H0: S=0, K=3; again since p-val so small, reject null. 
 
 #############################################
-# t-Student distribution                    #
+# t-Student distribution ~ t(mu, variance, v) where v is df#
+# v is found via method of moments, variance or kurtosis
+# kurt: v = 4 +(6/(K-3))
+# Can also use MLE to calculate v
 #############################################
 
 x = seq(-5,5,0.01)
 junk <- cbind(x,dnorm(x),ddist("std",x,shape=10),ddist("std",x,shape=5),ddist("std",x,shape=3))
 colnames(junk) <- c("x","vInf","v10","v5","v3")
-
+##ggplot gives us nicer visualisations
 ggplot(data = data.frame(junk), aes(x = x)) + 
   geom_line(aes(y = vInf,colour="v=Inf")) + 
   geom_line(aes(y = v10,colour="v=10")) +
@@ -95,9 +99,9 @@ bwdth     <- 0.1
 ggplot(data.frame(R0), aes(x = R0)) +
   theme_bw() +
   geom_histogram(binwidth = bwdth, colour = "white", fill = "yellow4", size = 0.1) +
-  stat_function(fun = function(x) dnorm(x)*N*bwdth, color = "red", size = 1)                        # normal distribution
-  # + stat_function(fun = function(x) ddist("std",x,shape=5)*N*bwdth, color = "black", size = 1)    # t-Student distribution
-  # + xlim(-7,-2)
+  stat_function(fun = function(x) dnorm(x)*N*bwdth, color = "red", size = 1) +                        # normal distribution
+  stat_function(fun = function(x) ddist("std",x,shape=5)*N*bwdth, color = "black", size = 1) +   # t-Student distribution
+  xlim(-7,-2)
 
 
 #######################################################
@@ -115,9 +119,9 @@ names(QQtable) <- c("empirical quantile", "theoretical quantile")
 q            <- seq(0.001, 0.999, 0.001)
 Qemp          <- quantile(R0,q)                    # empirical quantiles 
 #Qemp         <- quantile(rnorm(N),q)              # hypotherical if we had data from normal distribution
-#Qemp         <- quantile(R0,q)                    
-Qteo          <- qnorm(q)                          # theoretical quantile (normal)
-#v=5;   Qteo  <- qt(q,v)*sqrt((v-2)/v)             # t-Student (variance is v/v-2)
+Qemp         <- quantile(R0,q)                    
+#Qteo          <- qnorm(q)                          # theoretical quantile (normal)
+v=5;   Qteo  <- qt(q,v)*sqrt((v-2)/v)             # t-Student (variance is v/v-2)
 lim0    <- c(-5,5)                           
 par(mfrow=c(1,1), cex = 0.7, bty="l")
 plot(Qemp,Qteo, main="QQplot", col="red", xlim = lim0, ylim = lim0,
@@ -137,13 +141,13 @@ require(MASS)
 
 d0 <- fitdistr(R0, "normal")
 d0$loglik
-
+# This is an algorithmic method to find the right shape parameter, starting from our seed
 d1 <- fitdistr(R0, "t", m = 0, start = list(s=sqrt((v0-2)/v0), df=v0), lower=c(0.001,3))
 d1$loglik
 v=d1$estimate[[2]]
 
 # Comparison
-(d1$loglik-d0$loglik)/N
+(d1$loglik-d0$loglik)/N #How much better t dist is than normal dist
 
 # QQ plot
 q        <- seq(0.001, 0.999, 0.001)
